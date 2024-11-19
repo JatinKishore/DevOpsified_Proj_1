@@ -1,0 +1,6 @@
+replicaCount : 1
+
+image:
+  repository : jatinkishorem/go-web-app
+  pullPolicy : IfNotPresent
+  tag : "v1" 
