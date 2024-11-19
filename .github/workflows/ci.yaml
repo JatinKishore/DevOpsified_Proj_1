@@ -1,6 +1,5 @@
 name: CI/CD
 
-# Exclude the workflow to run on changes to the helm chart
 on:
   push:
     branches:
@@ -19,10 +18,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Go 1.23
+    - name: Set up Go 1.22
       uses: actions/setup-go@v2
       with:
-        go-version: 1.23
+        go-version: 1.22
 
     - name: Build
       run: go build -o go-web-app
@@ -37,10 +36,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Golangci-lint
-      uses: golangci/golangci-lint-action@v6.1.1
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v6
       with:
-        version: v1.60
+        version: v1.56.2
 
   push:
     runs-on: ubuntu-latest
@@ -66,7 +65,7 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/go-web-app:${{github.run_id}}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/go-web-app:${{ github.run_id }}
 
   update-newtag-in-helm-chart:
     runs-on: ubuntu-latest
@@ -81,13 +80,12 @@ jobs:
 
     - name: Update tag in Helm chart
       run: |
-        TAG="${{ github.run_id }}"
-        sed -i "s/tag: .*/tag: \"$TAG\"/" helm/go-web-app-chart/values.yaml
+        sed -i "s/tag: .*/tag: \"${{ github.run_id }}\"/" helm/go-web-app-chart/values.yaml
 
     - name: Commit and push changes
       run: |
-        git config --global user.email "jatinkm02@gmail.com"
-        git config --global user.name "JatinKishore"
+        git config --global user.email "abhishek@gmail.com"
+        git config --global user.name "Abhishek Veeramalla"
         git add helm/go-web-app-chart/values.yaml
         git commit -m "Update tag in Helm chart"
         git push
