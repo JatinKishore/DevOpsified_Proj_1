@@ -81,9 +81,10 @@ jobs:
       with:
         token: ${{ secrets.TOKEN }}
 
-    - name: Update tag in Helm chart
+     - name: Update tag in Helm chart
       run: |
-        sed -i 's/tag: .*/tag: "${{github.run_id}}"/' helm/go-web-app-chart/values.yaml
+        TAG="${{ github.run_id }}"
+        sed -i "s/tag: .*/tag: \"$TAG\"/" helm/go-web-app-chart/values.yaml
 
     - name: Commit and push changes
       run: |
