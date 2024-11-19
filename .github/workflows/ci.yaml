@@ -1,6 +1,8 @@
+# CICD using GitHub actions
+
 name: CI/CD
 
-# Workflow trigger: Run on pushes to the `main` branch, excluding certain paths
+# Exclude the workflow to run on changes to the helm chart
 on:
   push:
     branches:
@@ -12,7 +14,6 @@ on:
 
 jobs:
 
-  # Build Job
   build:
     runs-on: ubuntu-latest
 
@@ -20,7 +21,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Go
+    - name: Set up Go 1.23
       uses: actions/setup-go@v2
       with:
         go-version: 1.23
@@ -30,11 +31,9 @@ jobs:
 
     - name: Test
       run: go test ./...
-
-  # Code Quality Job
+  
   code-quality:
     runs-on: ubuntu-latest
-    needs: build
 
     steps:
     - name: Checkout repository
@@ -44,12 +43,11 @@ jobs:
       uses: golangci/golangci-lint-action@v6
       with:
         version: v1.56.2
-        config: .golangci.yml  # Specify config file if applicable
-
-  # Push Job (Build Docker Image and Push to DockerHub)
+  
   push:
     runs-on: ubuntu-latest
-    needs: [build, code-quality]
+
+    needs: build
 
     steps:
     - name: Checkout repository
@@ -64,17 +62,17 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and Push Docker Image
+    - name: Build and Push action
       uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/go-web-app:${{ github.run_id }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/go-web-app:${{github.run_id}}
 
-  # Update Helm Chart with New Docker Image Tag
   update-newtag-in-helm-chart:
     runs-on: ubuntu-latest
+
     needs: push
 
     steps:
@@ -85,15 +83,12 @@ jobs:
 
     - name: Update tag in Helm chart
       run: |
-        sed -i "s/tag: .*/tag: \"${{ github.run_id }}\"/" helm/go-web-app-chart/values.yaml
+        sed -i 's/tag: .*/tag: "${{github.run_id}}"/' helm/go-web-app-chart/values.yaml
 
     - name: Commit and push changes
-      env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN }}
       run: |
         git config --global user.email "jatinkm02@gmail.com"
         git config --global user.name "JatinKishore"
         git add helm/go-web-app-chart/values.yaml
-        git commit -m "Update Docker image tag to ${{ github.run_id }}"
+        git commit -m "Update tag in Helm chart"
         git push
-
