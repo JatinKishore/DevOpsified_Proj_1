@@ -67,6 +67,7 @@ jobs:
 
   update-newtag-in-helm-chart:
     runs-on: ubuntu-latest
+
     needs: push
 
     steps:
@@ -75,21 +76,16 @@ jobs:
       with:
         token: ${{ secrets.TOKEN }}
 
-    - name: Update tag in Helm chart
+    - name: Update tag in Helm chart (optional)
       run: |
         TAG="${{ github.run_id }}"
-        echo "Updating tag to $TAG"
-        sed -i "s/tag: .*/tag: \"$TAG\"/" helm/go-web-app-chart/values.yaml
+        # Update values.yaml file with new tag (if you want to store it in the repo)
+        sed -i "s|^  tag:.*|  tag: \"$TAG\"|" helm/go-web-app-chart/values.yaml
 
-    - name: Verify tag update
-      run: cat helm/go-web-app-chart/values.yaml
-
-    - name: Commit and push changes
+    - name: Commit and push changes (optional)
       run: |
         git config --global user.email "jatinkm02@gmail.com"
         git config --global user.name "JatinKishore"
         git add helm/go-web-app-chart/values.yaml
-        git status  # Check which files are staged
         git commit -m "Update tag in Helm chart"
-        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/JatinKishore/your-repo.git
-
+        git push
