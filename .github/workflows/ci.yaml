@@ -10,7 +10,6 @@ on:
       - 'README.md'
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
 
@@ -18,10 +17,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Go 1.22
+    - name: Set up Go 1.23
       uses: actions/setup-go@v2
       with:
-        go-version: 1.22
+        go-version: 1.23
 
     - name: Build
       run: go build -o go-web-app
@@ -36,14 +35,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
+    - name: Golangci-lint
+      uses: golangci/golangci-lint-action@v6.1.1
       with:
-        version: v1.56.2
+        version: v1.60
 
   push:
     runs-on: ubuntu-latest
-
     needs: build
 
     steps:
@@ -69,7 +67,6 @@ jobs:
 
   update-newtag-in-helm-chart:
     runs-on: ubuntu-latest
-
     needs: push
 
     steps:
@@ -80,13 +77,19 @@ jobs:
 
     - name: Update tag in Helm chart
       run: |
-        sed -i "s/tag: .*/tag: \"${{ github.run_id }}\"/" helm/go-web-app-chart/values.yaml
+        TAG="${{ github.run_id }}"
+        echo "Updating tag to $TAG"
+        sed -i "s/tag: .*/tag: \"$TAG\"/" helm/go-web-app-chart/values.yaml
+
+    - name: Verify tag update
+      run: cat helm/go-web-app-chart/values.yaml
 
     - name: Commit and push changes
       run: |
-        git config --global user.email "abhishek@gmail.com"
-        git config --global user.name "Abhishek Veeramalla"
+        git config --global user.email "jatinkm02@gmail.com"
+        git config --global user.name "JatinKishore"
         git add helm/go-web-app-chart/values.yaml
+        git status  # Check which files are staged
         git commit -m "Update tag in Helm chart"
-        git push
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/JatinKishore/your-repo.git
 
