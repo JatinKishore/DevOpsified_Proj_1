@@ -9,9 +9,9 @@ image:
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
 <<<<<<< HEAD
-  tag: "v1"
+  tag: "11978001416"
 =======
-  tag: "11977798284"
+  tag: "11978001416"
 >>>>>>> eecc5ca1f9c1354f6ce1f600e91dd8d01c4f3372
 
 ingress:
