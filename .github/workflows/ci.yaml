@@ -1,5 +1,8 @@
+# CICD using GitHub actions
+
 name: CI/CD
 
+# Exclude the workflow to run on changes to the helm chart
 on:
   push:
     branches:
@@ -10,6 +13,7 @@ on:
       - 'README.md'
 
 jobs:
+
   build:
     runs-on: ubuntu-latest
 
@@ -17,17 +21,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Go 1.23
+    - name: Set up Go 1.22
       uses: actions/setup-go@v2
       with:
-        go-version: 1.23
+        go-version: 1.22
 
     - name: Build
       run: go build -o go-web-app
 
     - name: Test
       run: go test ./...
-
+  
   code-quality:
     runs-on: ubuntu-latest
 
@@ -35,13 +39,14 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Golangci-lint
-      uses: golangci/golangci-lint-action@v6.1.1
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v6
       with:
-        version: v1.60
-
+        version: v1.56.2
+  
   push:
     runs-on: ubuntu-latest
+
     needs: build
 
     steps:
@@ -63,7 +68,7 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/go-web-app:${{ github.run_id }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/go-web-app:${{github.run_id}}
 
   update-newtag-in-helm-chart:
     runs-on: ubuntu-latest
@@ -76,16 +81,16 @@ jobs:
       with:
         token: ${{ secrets.TOKEN }}
 
-    - name: Update tag in Helm chart (optional)
+    - name: Update tag in Helm chart
       run: |
-        TAG="${{ github.run_id }}"
-        # Update values.yaml file with new tag (if you want to store it in the repo)
-        sed -i "s|^  tag:.*|  tag: \"$TAG\"|" helm/go-web-app-chart/values.yaml
+        sed -i 's/tag: .*/tag: "${{github.run_id}}"/' helm/go-web-app-chart/values.yaml
 
-    - name: Commit and push changes (optional)
+    - name: Commit and push changes
       run: |
         git config --global user.email "jatinkm02@gmail.com"
         git config --global user.name "JatinKishore"
         git add helm/go-web-app-chart/values.yaml
         git commit -m "Update tag in Helm chart"
         git push
+
+
